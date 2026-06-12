@@ -19,6 +19,7 @@ canvas{display:block;width:100%!important;height:100%!important;touch-action:non
 }
 </script>
 <script type="module">
+try {
 import kaplay from "kaplay";
 
 const k = kaplay({
@@ -165,6 +166,7 @@ onUpdate(() => {
 
 showTitle();
 console.log("🦖 Shape Survivor loaded");
+} catch(e) { console.error("GAME ERROR:", e.message, e.stack); document.body.innerHTML = '<pre style="color:red;padding:20px">Erro: '+e.message+'</pre>'; }
 </script>
 </body>
 </html>
