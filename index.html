@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, min-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Shape Survivor</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -11,18 +11,11 @@ canvas{display:block;width:100%!important;height:100%!important;touch-action:non
 </style>
 </head>
 <body>
-<script type="importmap">
-{
-    "imports": {
-        "kaplay": "https://cdn.jsdelivr.net/npm/kaplay@3001.0.0-alpha.5/dist/kaboom.mjs"
-    }
-}
-</script>
+<script src="https://cdn.jsdelivr.net/npm/kaplay@3001.0.0-alpha.5/dist/kaboom.mjs" type="module"></script>
 <script type="module">
-try {
-import kaplay from "kaplay";
+import * as kaplayMod from "https://cdn.jsdelivr.net/npm/kaplay@3001.0.0-alpha.5/dist/kaboom.mjs";
 
-const k = kaplay({
+const k = kaplayMod.default({
     width: 400,
     height: 700,
     background: "#0a0a1a",
@@ -45,7 +38,6 @@ for (let i = 0; i < 50; i++) {
     add([rect(rand(1, 3), rand(1, 3)), pos(rand(0, width()), rand(0, height())), color(rgb(255, 255, 255, rand(0.05, 0.25))), z(0), "star"]);
 }
 
-// ─── HELPERS ───
 function drawTriangle(x, y, r, c) {
     drawPolygon({ pts: [vec2(x, y - r), vec2(x - r*0.85, y + r*0.65), vec2(x + r*0.85, y + r*0.65)], color: c });
 }
@@ -59,114 +51,94 @@ function spawnParticles(x, y, r, g, b, n = 8) {
     }
 }
 
-// ─── TELA INICIAL ───
 function showTitle() {
-    destroyAll("ui");
     gameRunning = false; gameOverFlag = false;
-    add([rect(width(), height()), pos(0, 0), color(rgb(10, 10, 30)), z(50), "ui"]);
-    add([text("SHAPE", { size: 48 }), pos(width()/2, height()/2 - 100), anchor("center"), color(rgb(80, 180, 255)), z(51), "ui"]);
-    add([text("SURVIVOR", { size: 48 }), pos(width()/2, height()/2 - 55), anchor("center"), color(rgb(255, 80, 80)), z(51), "ui"]);
-
-    // Triângulo decorativo
-    const deco = add([pos(width()/2, height()/2 + 15), z(51), "ui", { t: 0 }]);
-    deco.onDraw(() => { deco.t += dt(); drawTriangle(deco.pos.x, deco.pos.y, 28 + Math.sin(deco.t*2)*5, rgb(80, 180, 255)); });
-
-    const hint = add([text("TOQUE PRA JOGAR", { size: 16 }), pos(width()/2, height()/2 + 95), anchor("center"), color(rgb(150, 150, 180)), z(51), "ui", { t: 0 }]);
-    hint.onDraw(() => { hint.t += dt(); hint.opacity = 0.5 + Math.sin(hint.t*2)*0.5; });
-
+    add([rect(width(), height()), pos(0, 0), color(rgb(10, 10, 30)), z(50), "tit"]);
+    add([text("SHAPE", { size: 48 }), pos(width()/2, height()/2-100), anchor("center"), color(rgb(80, 180, 255)), z(51), "tit"]);
+    add([text("SURVIVOR", { size: 48 }), pos(width()/2, height()/2-55), anchor("center"), color(rgb(255, 80, 80)), z(51), "tit"]);
+    const d = add([pos(width()/2, height()/2+15), z(51), "tit", { t: 0 }]);
+    d.onDraw(() => { d.t += dt(); drawTriangle(d.pos.x, d.pos.y, 28 + Math.sin(d.t*2)*5, rgb(80, 180, 255)); });
+    const h = add([text("TOQUE PRA JOGAR", { size: 16 }), pos(width()/2, height()/2+95), anchor("center"), color(rgb(150, 150, 180)), z(51), "tit", { t: 0 }]);
+    h.onDraw(() => { h.t += dt(); h.opacity = 0.5 + Math.sin(h.t*2)*0.5; });
     if (player) destroy(player);
-    player = createPlayer();
-    player.opacity = 0;
+    player = createPlayer(); player.opacity = 0;
 }
 
-function destroyAll(tag) { get(tag).forEach(destroy); }
+function destroyAll(t) { get(t).forEach(destroy); }
 
-// ─── JOGADOR ───
 function createPlayer() {
-    const p = add([pos(width()/2, height() - 80), area({ shape: new k.Polygon([vec2(0, -18), vec2(-14, 14), vec2(14, 14)]) }), z(10), "player", { speed: 280 }]);
-    p.onDraw(() => { const x = p.pos.x, y = p.pos.y; drawTriangle(x, y, 22, rgb(80, 180, 255, 0.2)); drawTriangle(x, y, 18, rgb(80, 180, 255)); drawTriangle(x, y, 8, rgb(140, 210, 255)); });
+    const p = add([pos(width()/2, height()-80), area({ shape: new k.Polygon([vec2(0,-18), vec2(-14,14), vec2(14,14)]) }), z(10), "player", { speed: 280 }]);
+    p.onDraw(() => { const x=p.pos.x, y=p.pos.y; drawTriangle(x,y,22,rgb(80,180,255,0.2)); drawTriangle(x,y,18,rgb(80,180,255)); drawTriangle(x,y,8,rgb(140,210,255)); });
     return p;
 }
 
-// ─── OBSTÁCULO ───
 function spawnObstacle() {
-    const sz = rand(16, 30), sp = rand(80, 150) + difficulty * 15;
-    const o = add([pos(rand(sz, width()-sz), -sz), area({ shape: new k.Circle(vec2(0, 0), sz) }), z(5), "obstacle", { sz, sp }]);
-    o.onDraw(() => { drawCircle(vec2(0, 0), o.sz + 4, rgb(200, 40, 40, 0.2)); drawCircle(vec2(0, 0), o.sz, rgb(255, 80, 80)); drawCircle(vec2(0, 0), o.sz * 0.5, rgb(200, 40, 40)); });
-    o.onUpdate(() => { o.move(0, o.sp * dt()); if (o.pos.y > height() + o.sz) destroy(o); });
+    const sz=rand(16,30), sp=rand(80,150)+difficulty*15;
+    const o=add([pos(rand(sz,width()-sz),-sz), area({shape:new k.Circle(vec2(0,0),sz)}), z(5), "obstacle", {sz,sp}]);
+    o.onDraw(() => { drawCircle(vec2(0,0),o.sz+4,rgb(200,40,40,0.2)); drawCircle(vec2(0,0),o.sz,rgb(255,80,80)); drawCircle(vec2(0,0),o.sz*0.5,rgb(200,40,40)); });
+    o.onUpdate(() => { o.move(0,o.sp*dt()); if (o.pos.y>height()+o.sz) destroy(o); });
 }
 
-// ─── COLETÁVEL ───
 function spawnCollectible() {
-    const sz = rand(10, 14), x = rand(sz, width() - sz);
-    const c = add([pos(x, -sz*2), area({ shape: new k.Rect(vec2(-sz, -sz), vec2(sz*2, sz*2)) }), z(3), "collectible", { sz, rot: 0 }]);
-    c.onDraw(() => { pushRotate(c.rot); drawRect(vec2(-c.sz-4, -c.sz-4), vec2(c.sz*2+8, c.sz*2+8), rgb(255, 220, 50, 0.15)); drawRect(vec2(-c.sz, -c.sz), vec2(c.sz*2, c.sz*2), rgb(255, 220, 50)); drawRect(vec2(-c.sz*0.4, -c.sz*0.4), vec2(c.sz*0.8, c.sz*0.8), rgb(255, 240, 150)); popTransform(); });
-    c.onUpdate(() => { c.move(0, (50 + difficulty*8)*dt()); c.rot += 100*dt(); if (c.pos.y > height() + c.sz*2) destroy(c); });
+    const sz=rand(10,14), x=rand(sz,width()-sz);
+    const c=add([pos(x,-sz*2), area({shape:new k.Rect(vec2(-sz,-sz),vec2(sz*2,sz*2))}), z(3), "collectible", {sz,rot:0}]);
+    c.onDraw(() => { pushRotate(c.rot); drawRect(vec2(-c.sz-4,-c.sz-4),vec2(c.sz*2+8,c.sz*2+8),rgb(255,220,50,0.15)); drawRect(vec2(-c.sz,-c.sz),vec2(c.sz*2,c.sz*2),rgb(255,220,50)); drawRect(vec2(-c.sz*0.4,-c.sz*0.4),vec2(c.sz*0.8,c.sz*0.8),rgb(255,240,150)); popTransform(); });
+    c.onUpdate(() => { c.move(0,(50+difficulty*8)*dt()); c.rot+=100*dt(); if(c.pos.y>height()+c.sz*2) destroy(c); });
 }
 
-// ─── GAME OVER ───
 function showGameOver() {
-    gameOverFlag = true;
-    if (score > highScore) highScore = score;
-    shake(12);
-    const bg = add([rect(width(), height()), pos(0, 0), color(BLACK), opacity(0), z(50), "go-bg"]);
-    bg.onUpdate(() => { bg.opacity = lerp(bg.opacity, 0.7, dt()*3); });
-    wait(0.4, () => {
-        add([text("GAME OVER", { size: 36 }), pos(width()/2, height()/2-60), anchor("center"), color(rgb(255, 80, 80)), z(51), "go"]);
-        add([text(`${score}`, { size: 56 }), pos(width()/2, height()/2+10), anchor("center"), color(WHITE), z(51), "go"]);
-        add([text(`MELHOR: ${highScore}`, { size: 16 }), pos(width()/2, height()/2+60), anchor("center"), color(rgb(150, 150, 180)), z(51), "go"]);
-        add([text("TOQUE P/ REINICIAR", { size: 14 }), pos(width()/2, height()/2+110), anchor("center"), color(rgb(150, 150, 180)), z(51), "go"]);
+    gameOverFlag=true; if(score>highScore) highScore=score; shake(12);
+    const bg=add([rect(width(),height()),pos(0,0),color(BLACK),opacity(0),z(50),"go"]);
+    bg.onUpdate(() => { bg.opacity=lerp(bg.opacity,0.7,dt()*3); });
+    wait(0.4,() => {
+        add([text("GAME OVER",{size:36}),pos(width()/2,height()/2-60),anchor("center"),color(rgb(255,80,80)),z(51),"go"]);
+        add([text(`${score}`,{size:56}),pos(width()/2,height()/2+10),anchor("center"),color(WHITE),z(51),"go"]);
+        add([text(`MELHOR: ${highScore}`,{size:16}),pos(width()/2,height()/2+60),anchor("center"),color(rgb(150,150,180)),z(51),"go"]);
+        add([text("TOQUE P/ REINICIAR",{size:14}),pos(width()/2,height()/2+110),anchor("center"),color(rgb(150,150,180)),z(51),"go"]);
     });
 }
 
-// ─── START ───
 function startGame() {
-    destroyAll("ui"); destroyAll("obstacle"); destroyAll("collectible"); destroyAll("particle"); destroyAll("go-bg"); destroyAll("go");
-    score = 0; difficulty = 1; spawnTimer = 0; gameRunning = true; gameOverFlag = false;
-    if (player) destroy(player);
-    player = createPlayer();
-    if (scoreLabel) destroy(scoreLabel);
-    if (highLabel) destroy(highLabel);
-    scoreLabel = add([text("0", { size: 36 }), pos(20, 20), color(WHITE), fixed(), z(100)]);
-    highLabel = add([text(`BEST: ${highScore}`, { size: 14 }), pos(20, 60), color(rgb(150, 150, 180)), fixed(), z(100)]);
-
+    destroyAll("tit"); destroyAll("obstacle"); destroyAll("collectible"); destroyAll("particle"); destroyAll("go");
+    score=0; difficulty=1; spawnTimer=0; gameRunning=true; gameOverFlag=false;
+    if(player) destroy(player);
+    player=createPlayer();
+    if(scoreLabel) destroy(scoreLabel); if(highLabel) destroy(highLabel);
+    scoreLabel=add([text("0",{size:36}),pos(20,20),color(WHITE),fixed(),z(100)]);
+    highLabel=add([text(`BEST: ${highScore}`,{size:14}),pos(20,60),color(rgb(150,150,180)),fixed(),z(100)]);
     player.onUpdate(() => {
-        if (!gameRunning) return;
-        let mx = 0, my = 0;
-        if (isKeyDown("left") || isKeyDown("a")) mx = -1;
-        if (isKeyDown("right") || isKeyDown("d")) mx = 1;
-        if (isKeyDown("up") || isKeyDown("w")) my = -1;
-        if (isKeyDown("down") || isKeyDown("s")) my = 1;
-        if (touchPos) { const dx = touchPos.x - player.pos.x, dy = touchPos.y - player.pos.y, d = Math.sqrt(dx*dx+dy*dy); if (d > 10) { mx = dx/d; my = dy/d; } }
-        if (mx || my) { const l = Math.sqrt(mx*mx+my*my); player.move(mx/l*player.speed*dt(), my/l*player.speed*dt()); }
-        player.pos.x = clamp(player.pos.x, 18, width()-18);
-        player.pos.y = clamp(player.pos.y, 18, height()-18);
+        if(!gameRunning) return;
+        let mx=0,my=0;
+        if(isKeyDown("left")||isKeyDown("a")) mx=-1;
+        if(isKeyDown("right")||isKeyDown("d")) mx=1;
+        if(isKeyDown("up")||isKeyDown("w")) my=-1;
+        if(isKeyDown("down")||isKeyDown("s")) my=1;
+        if(touchPos) { const dx=touchPos.x-player.pos.x, dy=touchPos.y-player.pos.y, d=Math.sqrt(dx*dx+dy*dy); if(d>10){mx=dx/d;my=dy/d} }
+        if(mx||my) { const l=Math.sqrt(mx*mx+my*my); player.move(mx/l*player.speed*dt(), my/l*player.speed*dt()); }
+        player.pos.x=clamp(player.pos.x,18,width()-18);
+        player.pos.y=clamp(player.pos.y,18,height()-18);
     });
 }
 
-// ─── INPUT ───
-onTouchStart((p) => { if (!gameRunning && !gameOverFlag) { startGame(); return; } if (gameOverFlag) { destroyAll("go-bg"); startGame(); return; } touchPos = p; });
-onTouchMove((p) => { if (gameRunning) touchPos = p; });
-onTouchEnd(() => { touchPos = null; });
-onClick(() => { if (gameOverFlag) { destroyAll("go-bg"); startGame(); } });
-onKeyPress("space", () => { if (gameOverFlag) { destroyAll("go-bg"); startGame(); } });
+onTouchStart((p) => { if(!gameRunning&&!gameOverFlag) { startGame(); return; } if(gameOverFlag) { destroyAll("go"); startGame(); return; } touchPos=p; });
+onTouchMove((p) => { if(gameRunning) touchPos=p; });
+onTouchEnd(() => { touchPos=null; });
+onClick(() => { if(gameOverFlag) { destroyAll("go"); startGame(); } });
+onKeyPress("space", () => { if(gameOverFlag) { destroyAll("go"); startGame(); } });
 
-// ─── COLISÕES ───
-onCollide("player", "obstacle", (p, o) => { if (!gameRunning) return; spawnParticles(p.pos.x, p.pos.y, 255, 80, 80, 14); gameRunning = false; showGameOver(); });
-onCollide("player", "collectible", (p, c) => { if (!gameRunning) return; score++; difficulty = 1 + Math.floor(score/3)*0.5; spawnParticles(c.pos.x, c.pos.y, 255, 220, 50, 6); destroy(c); if (scoreLabel) scoreLabel.text = `${score}`; if (highLabel) highLabel.text = `BEST: ${highScore}`; });
+onCollide("player","obstacle", (p,o) => { if(!gameRunning) return; spawnParticles(p.pos.x,p.pos.y,255,80,80,14); gameRunning=false; showGameOver(); });
+onCollide("player","collectible", (p,c) => { if(!gameRunning) return; score++; difficulty=1+Math.floor(score/3)*0.5; spawnParticles(c.pos.x,c.pos.y,255,220,50,6); destroy(c); if(scoreLabel) scoreLabel.text=`${score}`; if(highLabel) highLabel.text=`BEST: ${highScore}`; });
 
-// ─── LOOP ───
 onUpdate(() => {
-    if (!gameRunning || gameOverFlag) return;
-    spawnTimer += dt();
-    const iv = Math.max(0.35, 1.5 - difficulty*0.15);
-    if (spawnTimer >= iv) { spawnTimer = 0; spawnObstacle(); if (difficulty > 2 && rand(0,1) > 0.5) spawnObstacle(); }
-    if (get("collectible").length < 2 && rand(0,1) > 0.98) spawnCollectible();
+    if(!gameRunning||gameOverFlag) return;
+    spawnTimer+=dt();
+    const iv=Math.max(0.35, 1.5-difficulty*0.15);
+    if(spawnTimer>=iv) { spawnTimer=0; spawnObstacle(); if(difficulty>2&&rand(0,1)>0.5) spawnObstacle(); }
+    if(get("collectible").length<2&&rand(0,1)>0.98) spawnCollectible();
 });
 
 showTitle();
-console.log("🦖 Shape Survivor loaded");
-} catch(e) { console.error("GAME ERROR:", e.message, e.stack); document.body.innerHTML = '<pre style="color:red;padding:20px">Erro: '+e.message+'</pre>'; }
+console.log("🦖 Shape Survivor ready");
 </script>
 </body>
 </html>
